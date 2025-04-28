@@ -6,8 +6,12 @@ resource "tls_private_key" "monitor" {
 }
 
 resource "aws_key_pair" "monitor" {
-  key_name   = "${var.cluster_name}-monitor-"
+  key_name   = "${var.cluster_name}-monitor-key"
   public_key = tls_private_key.monitor.public_key_openssh
+
+  lifecycle {
+    ignore_changes = [public_key]
+  }
 }
 
 resource "local_sensitive_file" "monitor_key" {
