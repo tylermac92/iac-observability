@@ -1,0 +1,63 @@
+- name: Create directories
+  file:
+    path: "{{ prometheus_dir }}/{{ item }}"
+    state: directory
+    owner: root
+    mode: "0755"
+  loop:
+    - bin
+    - data
+
+- name: Download prometheus tarball
+  get_url:
+    url: "https://github.com/prometheus/prometheus/releases/download/v{{ prometheus_version }}/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
+    dest: /tmp/prom.tar.gz
+    mode: "0644"
+
+- name: Extract prometheus binaries
+  unarchive:
+    src: /tmp/prom.tar.gz
+    dest: "{{ prometheus_dir }}/bin"
+    remote_src: yes
+    extra_opts: [--strip-components=1]
+
+- name: Copy prometheus systemd unit
+  copy:
+    dest: /etc/systemd/system/prometheus.service
+    content: |
+      [Unit]
+      Description=Prometheus
+      After=network.target
+      [Service]
+      ExecStart={{ prometheus_dir }}/bin/prometheus --config.file={{ prometheus_dir }}/bin/prometheus.yml --storage.tsdb.path={{ prometheus_dir }}/data
+      Restart=always
+      [Install]
+      WantedBy=multi-user.target
+  notify: restart prometheus
+
+- name: Download node exporter
+  get_url:
+    url: "https://github.com/prometheus/node_exporter/releases/download/v{{ node_exporter_version }}/node_exporter-{{ node_exporter_version }}.linux-amd64.tar.gz"
+    dest: /tmp/node.tar.gz
+    mode: "0644"
+
+- name: Extract node exporter
+  unarchive:
+    src: /tmp/node.tar.gz
+    dest: /usr/local/bin
+    remote_src: yes
+    extra_opts: [--strip-components=1]
+
+- name: Node exporter systemd unit
+  copy:
+    dest: /etc/systemd/system/node_exporter.service
+    content: |
+      [Unit]
+      Description=Node Exporter
+      After=network.target
+      [Service]
+      ExecStart=/usr/local/bin/node_exporter
+      Restart=always
+      [Install]
+      WantedBy=multi-user.target
+  notify: restart node_exporter

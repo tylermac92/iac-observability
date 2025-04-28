@@ -1,0 +1,84 @@
+name: infra
+
+on:
+  push:
+    paths:
+      - "infra/**"
+      - ".github/workflows/infra.yml"
+
+env:
+  TF_IN_AUTOMATION: true
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+
+jobs:
+  terraform-apply:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write      # for AWS OIDC, if you prefer that to long-lived keys
+      contents: read
+
+    steps:
+    # 1 — Check out code
+    - uses: actions/checkout@v4
+
+    # 2 — Install Terraform
+    - uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: 1.8.4
+
+    # 3 — Set AWS creds (long-lived keys; swap for OIDC if you like)
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region:            ${{ env.AWS_REGION }}
+
+    # 4 — Terraform init/plan/apply
+    - name: Terraform init
+      working-directory: infra/terraform/live/dev
+      run: terraform init \
+            -backend-config="bucket=${{ secrets.TF_BUCKET }}" \
+            -backend-config="dynamodb_table=${{ secrets.TF_DDB_TABLE }}"
+
+    - name: Terraform plan
+      working-directory: infra/terraform/live/dev
+      run: terraform plan -out=tfplan
+
+    - name: Terraform apply (main only)
+      if: github.ref == 'refs/heads/main'
+      working-directory: infra/terraform/live/dev
+      run: terraform apply -auto-approve tfplan
+
+    # 5 — Capture outputs (public IP + key path) into env vars
+    - name: Export TF outputs
+      id: tfout
+      working-directory: infra/terraform/live/dev
+      run: |
+        echo "public_ip=$(terraform output -raw grafana_url | cut -d/ -f3 | cut -d: -f1)" >> "$GITHUB_OUTPUT"
+        echo "key_path=$(terraform output -raw ssh_private_key_path)" >> "$GITHUB_OUTPUT"
+
+    # 6 — Set up Python & Ansible
+    - name: Install Ansible
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y ansible
+
+    # 7 — Generate one-off inventory that points at monitor node
+    - name: Generate inventory
+      working-directory: infra/ansible
+      run: |
+        cat > inventory.yml <<EOF
+        all:
+          hosts:
+            monitor-node:
+              ansible_host: ${{ steps.tfout.outputs.public_ip }}
+              ansible_user: ec2-user
+              ansible_ssh_private_key_file: ${{ steps.tfout.outputs.key_path }}
+        EOF
+        cat inventory.yml
+
+    # 8 — Run the Ansible playbook
+    - name: Ansible playbook
+      working-directory: infra/ansible
+      run: ansible-playbook playbooks/site.yml

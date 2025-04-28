@@ -1,0 +1,96 @@
+# ------------------------------------------------------------------ #
+# Import key & add repo
+# ------------------------------------------------------------------ #
+- name: Import Grafana GPG key
+  rpm_key:
+    state: present
+    key: https://rpm.grafana.com/gpg.key
+
+- name: Add Grafana OSS repo
+  yum_repository:
+    name: grafana
+    description: Grafana OSS
+    baseurl: https://rpm.grafana.com/oss/rpm
+    gpgcheck: yes
+    repo_gpgcheck: yes
+    gpgkey: https://rpm.grafana.com/gpg.key
+
+# ------------------------------------------------------------------ #
+# Install package (includes binaries but we will ignore its SysV file)
+# ------------------------------------------------------------------ #
+- name: Install Grafana RPM
+  yum:
+    name: grafana
+    state: present
+  tags: grafana
+
+# ------------------------------------------------------------------ #
+# Remove vendor SysV init script to avoid conflicts
+# ------------------------------------------------------------------ #
+- name: Remove vendor init script
+  file:
+    path: /etc/init.d/grafana-server
+    state: absent
+  when: ansible_facts['distribution'] == "Amazon" and ansible_facts['distribution_major_version'] == "2023"
+
+- name: Ensure /var/lib/grafana exists
+  file:
+    path: /var/lib/grafana
+    state: directory
+    owner: grafana
+    group: grafana
+    mode: "0755"
+
+- name: Ensure /var/log/grafana exists
+  file:
+    path: /var/log/grafana
+    state: directory
+    owner: grafana
+    group: grafana
+    mode: "0755"
+
+- name: Ensure /usr/share/grafana/data ownership
+  file:
+    path: /usr/share/grafana/data
+    state: directory
+    owner: grafana
+    group: grafana
+    mode: "0755"
+
+# ------------------------------------------------------------------ #
+# Create fully native systemd unit with a unique name (grafana.service)
+# ------------------------------------------------------------------ #
+- name: Install native grafana.service unit
+  copy:
+    dest: /etc/systemd/system/grafana.service
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=Grafana
+      After=network.target
+
+      [Service]
+      User=grafana
+      Group=grafana
+      WorkingDirectory=/usr/share/grafana
+      ExecStart=/usr/share/grafana/bin/grafana-server \
+        --homepath=/usr/share/grafana \
+        --config=/etc/grafana/grafana.ini \
+        --packaging=rpm
+        --data=/var/lib/grafana
+      Restart=always
+      LimitNOFILE=10000
+
+      [Install]
+      WantedBy=multi-user.target
+  notify: reload systemd
+
+# ------------------------------------------------------------------ #
+# Enable & start our custom unit
+# ------------------------------------------------------------------ #
+- name: Enable and start grafana.service
+  systemd:
+    name: grafana.service
+    enabled: yes
+    state: started
+  tags: grafana

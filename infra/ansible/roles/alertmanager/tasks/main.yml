@@ -1,0 +1,49 @@
+- name: Create Alertmanager directories
+  file:
+    path: "{{ alertmanager_dir }}/{{ item }}"
+    state: directory
+    owner: root
+    mode: "0755"
+  loop:
+    - bin
+    - data
+    - config
+
+- name: Copy default alertmanager.yml
+  copy:
+    src: alertmanager.yml
+    dest: "{{ alertmanager_dir }}/config/alertmanager.yml"
+    owner: root
+    mode: "0644"
+
+- name: Download alertmanager
+  get_url:
+    url: "https://github.com/prometheus/alertmanager/releases/download/v{{ alertmanager_version }}/alertmanager-{{ alertmanager_version }}.linux-amd64.tar.gz"
+    dest: /tmp/alertmanager.tar.gz
+    mode: "0644"
+
+- name: Extract Alertmanager binaries
+  unarchive:
+    src: /tmp/alertmanager.tar.gz
+    dest: "{{ alertmanager_dir }}/bin"
+    remote_src: yes
+    extra_opts: [--strip-components=1]
+
+- name: Create systemd unit for alertmanager
+  copy:
+    dest: /etc/systemd/system/alertmanager.service
+    content: |
+      [Unit]
+      Description=Alertmanager
+      After=network.target
+
+      [Service]
+      WorkingDirectory={{ alertmanager_dir }}
+      ExecStart={{ alertmanager_dir }}/bin/alertmanager \
+        --config.file={{ alertmanager_dir }}/config/alertmanager.yml \
+        --storage.path={{ alertmanager_dir }}/data
+      Restart=always
+
+      [Install]
+      WantedBy=multi-user.target
+  notify: restart alertmanager

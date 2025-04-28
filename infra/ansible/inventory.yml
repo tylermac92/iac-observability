@@ -1,0 +1,4 @@
+all:
+  hosts:
+    monitor-node:
+      ansible_host: 54.144.225.224

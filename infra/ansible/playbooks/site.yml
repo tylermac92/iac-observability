@@ -1,0 +1,7 @@
+- hosts: monitor-node
+  become: true
+  roles:
+    - common
+    - prometheus
+    - alertmanager
+    - grafana
