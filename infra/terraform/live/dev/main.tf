@@ -6,7 +6,7 @@ resource "tls_private_key" "monitor" {
 }
 
 resource "aws_key_pair" "monitor" {
-  key_name   = "${var.cluster_name}-monitor-key"
+  key_name   = "${var.cluster_name}-monitor-"
   public_key = tls_private_key.monitor.public_key_openssh
 }
 
