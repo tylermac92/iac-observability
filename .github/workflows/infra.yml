@@ -39,6 +39,9 @@ jobs:
       working-directory: infra/terraform/live/dev
       run: terraform init -backend-config="bucket=${{ secrets.TF_BUCKET }}" -backend-config="key=dev/terraform.tfstate" -backend-config="dynamodb_table=${{ secrets.TF_DDB_TABLE }}"
 
+    - name: Import key (one -time)
+      run: terraform import aws_key_pair.monitor ${CLUSTER_NAME}-monitor-key
+
     - name: Terraform plan
       working-directory: infra/terraform/live/dev
       run: terraform plan -out=tfplan
