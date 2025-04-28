@@ -48,13 +48,19 @@ jobs:
       working-directory: infra/terraform/live/dev
       run: terraform apply -auto-approve tfplan
 
-    # 5 — Capture outputs (public IP + key path) into env varss
+				
     - name: Export TF outputs
-      id: tfout
-      working-directory: infra/terraform/live/dev
-      run: |
-        echo "public_ip=$(terraform output -raw monitor_public_ip)" >> "$GITHUB_OUTPUT"
-        echo "key_path=$(terraform output -raw ssh_private_key_path)" >> "$GITHUB_OUTPUT"
+  		id: tfout
+  		working-directory: infra/terraform/live/dev
+  		shell: bash
+  		run: |
+    		# capture *stdout* only, strip trailing newline
+    		ip=$(terraform output -raw monitor_public_ip 2>/dev/null | tr -d '\n')
+    		key_path=$(terraform output -raw ssh_private_key_path 2>/dev/null | tr -d '\n')
+
+    		# write clean lines that the runner accepts
+    		printf "public_ip=%s\n"  "$ip"       >> "$GITHUB_OUTPUT"
+    		printf "key_path=%s\n"   "$key_path" >> "$GITHUB_OUTPUT"
 
     # 6 — Set up Python & Ansible
     - name: Install Ansible
