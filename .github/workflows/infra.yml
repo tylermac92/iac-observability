@@ -43,7 +43,7 @@ jobs:
       working-directory: infra/terraform/live/dev
       run: terraform workspace select default
 
-    - name: Terraform plan
+    - name: Terraform planso
       working-directory: infra/terraform/live/dev
       run: terraform plan -out=tfplan
 
