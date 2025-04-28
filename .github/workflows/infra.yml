@@ -53,7 +53,7 @@ jobs:
       id: tfout
       working-directory: infra/terraform/live/dev
       run: |
-        echo "public_ip=$(terraform output -raw grafana_url | cut -d/ -f3 | cut -d: -f1)" >> "$GITHUB_OUTPUT"
+        echo "public_ip=$(terraform output -raw monitor_public_ip)" >> "$GITHUB_OUTPUT"
         echo "key_path=$(terraform output -raw ssh_private_key_path)" >> "$GITHUB_OUTPUT"
 
     # 6 — Set up Python & Ansible
