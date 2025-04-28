@@ -37,9 +37,7 @@ jobs:
     # 4 — Terraform init/plan/apply
     - name: Terraform init
       working-directory: infra/terraform/live/dev
-      run: terraform init \
-            -backend-config="bucket=${{ secrets.TF_BUCKET }}" \
-            -backend-config="dynamodb_table=${{ secrets.TF_DDB_TABLE }}"
+      run: terraform init -backend-config="bucket=${{ secrets.TF_BUCKET }}" -backend-config="dynamodb_table=${{ secrets.TF_DDB_TABLE }}"
 
     - name: Terraform plan
       working-directory: infra/terraform/live/dev
