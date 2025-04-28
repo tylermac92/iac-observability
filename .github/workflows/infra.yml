@@ -59,7 +59,7 @@ jobs:
         printf "public_ip=%s\n"   "$ip"       >> "$GITHUB_OUTPUT"
         printf "key_path=$s\n"    "$key_path" >> "$GITHUB_OUTPUT"
 
-    # 6 — Set up Python & Ansible
+    # 6 — Set up Python & Ansiblee
     - name: Install Ansible
       run: |
         sudo apt-get update -y
