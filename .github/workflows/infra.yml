@@ -48,7 +48,7 @@ jobs:
       working-directory: infra/terraform/live/dev
       run: terraform apply -auto-approve tfplan
 
-    # 5 — Capture outputs (public IP + key path) into env vars
+    # 5 — Capture outputs (public IP + key path) into env varss
     - name: Export TF outputs
       id: tfout
       working-directory: infra/terraform/live/dev
