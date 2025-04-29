@@ -71,13 +71,15 @@ jobs:
 
     # 7 — Generate one-off inventory that points at monitor node
     - name: Generate inventory
-      working-directory: infra/ansible
-      shell: bash
+      working-directory: infra/terraform/live/dev
+      shell: bash --noprofile --norc -e -o pipefail {0}
       run: |
-        PUBLIC_IP=$(terraform -chdir=../terraform/live/dev output -raw monitor_public_ip 2>/dev/null)
-        KEY_PATH=$(terraform -chdir=../terraform/live/dev output -raw ssh_private_key_path 2>/dev/null)
+        TF_JSON=$(terraform output -json)
 
-        cat > inventory.yml <<EOF
+        PUBLIC_IP=$(echo "$TF_JSON" | jq -r '.monitor_public_ip.value')
+        KEY_PATH=$(echo "TF_JSON" | jq -r '.ssh_private_key_path.value')
+
+        cat > ../../ansible/inventory.yml <<EOF
         all:
           hosts:
             monitor-node:
@@ -87,7 +89,7 @@ jobs:
         EOF
 
         echo "Generated inventory:"
-        cat inventory.yml
+        cat ../../ansible/inventory.yml
 
     # 8 — Run the Ansible playbook
     - name: Ansible playbook
