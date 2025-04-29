@@ -71,10 +71,12 @@ resource "aws_iam_instance_profile" "monitor_ssm" {
 
 data "aws_caller_identity" "current" {}
 
+data "aws_region" "current" {}
+
 data "aws_iam_policy_document" "ssm_put" {
   statement {
     actions = ["ssm:PutParameter"]
-    resources = ["arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/monitoring/slack_webhook"]
+    resources = ["arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/monitoring/slack_webhook"]
   }
 }
 
