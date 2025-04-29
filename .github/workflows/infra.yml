@@ -77,7 +77,7 @@ jobs:
         TF_JSON=$(terraform output -json)
 
         PUBLIC_IP=$(echo "$TF_JSON" | jq -r '.monitor_public_ip.value')
-        KEY_PATH=$(echo "TF_JSON" | jq -r '.ssh_private_key_path.value')
+        KEY_PATH=$(echo "$TF_JSON" | jq -r '.ssh_private_key_path.value')
 
         cat > ../../ansible/inventory.yml <<EOF
         all:
