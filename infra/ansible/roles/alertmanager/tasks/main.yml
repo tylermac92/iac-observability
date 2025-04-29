@@ -77,5 +77,5 @@
     owner: root
     mode: "0644"
   vars:
-    slack_webhook: "{{ slack_hook.value }}"
+    slack_webhook: "{{ slack_hook.parameter.value }}"
   notify: restart alertmanager
