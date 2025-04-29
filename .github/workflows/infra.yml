@@ -14,79 +14,81 @@ jobs:
   terraform-apply:
     runs-on: ubuntu-latest
     permissions:
-      id-token: write      # for AWS OIDC, if you prefer that to long-lived keys
+      id-token: write
       contents: read
 
     steps:
-    # 1 — Check out code
-    - uses: actions/checkout@v4
+      # 1. Checkout code
+      - uses: actions/checkout@v4
 
-    # 2 — Install Terraform
-    - uses: hashicorp/setup-terraform@v2
-      with:
-        terraform_version: 1.8.4
+      # 2. Install Terraform
+      - uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.8.4
 
-    # 3 — Set AWS creds (long-lived keys; swap for OIDC if you like)
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region:            ${{ env.AWS_REGION }}
+      # 3. Configure AWS credentials
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            ${{ env.AWS_REGION }}
 
-    # 4 — Terraform init/plan/apply
-    - name: Terraform init
-      working-directory: infra/terraform/live/dev
-      run: terraform init -input=false -no-color
+      # 4. Terraform init (uses backend.tf in the live/dev folder)
+      - name: Terraform init
+        working-directory: infra/terraform/live/dev
+        run: terraform init -input=false -no-color
 
-    - name: select default workspace
-      working-directory: infra/terraform/live/dev
-      run: terraform workspace select default
+      # 5. Ensure default workspace
+      - name: Select default workspace
+        working-directory: infra/terraform/live/dev
+        run: |
+          terraform workspace select default || terraform workspace new default
 
-    - name: Terraform planso
-      working-directory: infra/terraform/live/dev
-      run: terraform plan -out=tfplan
+      # 6. Terraform plan
+      - name: Terraform plan
+        working-directory: infra/terraform/live/dev
+        run: terraform plan -out=tfplan
 
-    - name: Terraform apply (main only)
-      if: github.ref == 'refs/heads/main'
-      working-directory: infra/terraform/live/dev
-      run: terraform apply -auto-approve tfplan
+      # 7. Terraform apply (only on main)
+      - name: Terraform apply
+        if: github.ref == 'refs/heads/main'
+        working-directory: infra/terraform/live/dev
+        run: terraform apply -input=false -auto-approve tfplan
 
-    - name: Export TF outputs
-      id: tfout
-      working-directory: infra/terraform/live/dev
-      run: |
-        CLEAN_JSON=$(terraform output -json | grep -vE '^(::|\[command\])')
+      # 8. Export TF outputs (clean JSON → jq → $GITHUB_OUTPUT)
+      - name: Export TF outputs
+        id: tfout
+        working-directory: infra/terraform/live/dev
+        run: |
+          CLEAN_JSON=$(terraform output -json | grep -vE '^(::|\[command\])')
+          public_ip=$(echo "$CLEAN_JSON" | jq -r '.monitor_public_ip.value')
+          key_path=$(echo "$CLEAN_JSON" | jq -r '.ssh_private_key_path.value')
+          echo "public_ip=${public_ip}" >> "$GITHUB_OUTPUT"
+          echo "key_path=${key_path}"   >> "$GITHUB_OUTPUT"
 
-        echo "public_ip=$(echo $CLEAN_JSON | jq -r .monitor_public_ip.value)"
-        echo "key_path=$(echo $CLEAN_JSON | jq -r .ssh_private_key_path.value)"
+      # 9. Generate Ansible inventory from outputs
+      - name: Generate inventory
+        working-directory: infra/ansible
+        run: |
+          cat > inventory.yml <<EOF
+all:
+  hosts:
+    monitor-node:
+      ansible_host: ${{ steps.tfout.outputs.public_ip }}
+      ansible_user: ec2-user
+      ansible_ssh_private_key_file: ${{ steps.tfout.outputs.key_path }}
+EOF
+          echo "Generated inventory:"
+          cat inventory.yml
 
-        echo "public_ip=${public_ip}" >> "$GITHUB_OUTPUT"
-        echo "key_path=${key_path}" >> "$GITHUB_OUTPUT"
+      # 10. Install Ansible (and jq)
+      - name: Install Ansible and jq
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y ansible jq
 
-    # 6 — Set up Python & Ansiblee
-    - name: Install Ansible
-      run: |
-        sudo apt-get update -y
-        sudo apt-get install -y ansible
-
-    # 7 — Generate one-off inventory that points at monitor node
-    - name: Generate inventory
-      working-directory: infra/ansible
-      run: |
-        cat > inventory.yml <<EOF
-      all:
-        hosts:
-          monitor-node:
-            ansible_host: ${{ steps.tfout.outputs.public_ip }}
-            ansible_user: ec2-user
-            ansible_ssh_private_key_file: ${{ steps.tfout.outputs.key_path }}
-      EOF
-        
-        echo "Generated inventory:"
-        cat inventory.yml
-
-    # 8 — Run the Ansible playbook
-    - name: Ansible playbook
-      working-directory: infra/ansible
-      run: ansible-playbook playbooks/site.yml
+      # 11. Run the Ansible playbook
+      - name: Run Ansible playbook
+        working-directory: infra/ansible
+        run: ansible-playbook playbooks/site.yml
