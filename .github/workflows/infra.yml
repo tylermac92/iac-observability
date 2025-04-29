@@ -66,6 +66,12 @@ jobs:
           echo "public_ip=${public_ip}" >> "$GITHUB_OUTPUT"
           echo "key_path=${key_path}"   >> "$GITHUB_OUTPUT"
 
+      - name: Copy SSH key into ansible folder
+        run: |
+          mkdir -p infra/ansible
+          cp "${{ steps.tfout.outputs.key_path }}" infra/ansible/monitor_key.pem
+          chmod 0600 infra/ansible/monitor_key.pem
+
       # 9. Generate Ansible inventory from outputs
       - name: Generate inventory
         working-directory: infra/ansible
@@ -75,7 +81,7 @@ jobs:
           echo "    monitor-node:" >> inventory.yml
           echo "      ansible_host: ${{ steps.tfout.outputs.public_ip }}" >> inventory.yml
           echo "      ansible_user: ec2-user" >> inventory.yml
-          echo "      ansible_ssh_private_key_file: ${{ steps.tfout.outputs.key_path }}" >> inventory.yml
+          echo "      ansible_ssh_private_key_file: monitor_key.pem" >> inventory.yml
           echo "Generated inventory:"
           cat inventory.yml
 
