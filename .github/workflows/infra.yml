@@ -76,6 +76,8 @@ jobs:
       run: |
         PUBLIC_IP=$(terraform -chdir=../terraform/live/dev output -raw monitor_public_ip | head -n1)
         KEY_PATH=$(terraform -chdir=../terraform/live/dev output -raw ssh_private_key_path | head -n1)
+        echo "PUBLIC_IP is ${PUBLIC_IP}"
+        echo "KEY_PATH is ${KEY_PATH}"
 
         cat > inventory.yml <<EOF
         all:
