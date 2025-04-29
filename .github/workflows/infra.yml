@@ -55,13 +55,10 @@ jobs:
     - name: Export TF outputs
       id: tfout
       working-directory: infra/terraform/live/dev
-      shell: bash
       run: |
-        ip=$(terraform output -raw monitor_public_ip 2>/dev/null | tr -d '\n')
-        key_path=$(terraform output -raw ssh_private_key_path 2>/dev/null | tr -d '\n')
-
-        printf "public_ip=%s\n"   "$ip"       >> "$GITHUB_OUTPUT"
-        printf "key_path=$s\n"    "$key_path" >> "$GITHUB_OUTPUT"
+        TF_JSON=$(terraform output -json | tail -n1)
+        echo "public_ip=$(echo $TF_JSON | jq -r .monitor_public_ip.value)" >> "$GITHUB_OUTPUT"
+        echo "key_path=$(echo $TF_JSON | jq -r .ssh_private_key_path.value)" >> "$GITHUB_OUTPUT"
 
     # 6 — Set up Python & Ansiblee
     - name: Install Ansible
@@ -71,25 +68,17 @@ jobs:
 
     # 7 — Generate one-off inventory that points at monitor node
     - name: Generate inventory
-      working-directory: infra/terraform/live/dev
-      shell: bash --noprofile --norc -e -o pipefail {0}
+      working-directory: infra/ansible
       run: |
-        TF_JSON=$(terraform output -json | tail -n1)
-
-        PUBLIC_IP=$(echo "$TF_JSON" | jq -r '.monitor_public_ip.value')
-        KEY_PATH=$(echo "$TF_JSON" | jq -r '.ssh_private_key_path.value')
-
-        cat > ../../ansible/inventory.yml <<EOF
-        all:
-          hosts:
-            monitor-node:
-              ansible_host: ${PUBLIC_IP}
-              ansible_user: ec2-user
-              ansible_ssh_private_key_file: ${KEY_PATH}
-        EOF
+        echo "all:"                          > inventory.yml
+        echo "  hosts:"                     >> inventory.yml
+        echo "    monitor-node:"            >> inventory.yml
+        echo "      ansible_host: ${{ steps.tfout.outputs.public_ip }}" >> inventory.yml
+        echo "      ansible_user: ec2-user" >> inventory.yml
+        echo "      ansible_ssh_private_key_file: ${{ steps.tfout.outputs.key_path }}" >> inventory.yml
 
         echo "Generated inventory:"
-        cat ../../ansible/inventory.yml
+        cat inventory.yml
 
     # 8 — Run the Ansible playbook
     - name: Ansible playbook
