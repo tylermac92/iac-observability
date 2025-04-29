@@ -1,0 +1,72 @@
+{
+  "id": null,
+  "uid": "node-overview",
+  "title": "Node Overview",
+  "tags": ["observability", "prometheus"],
+  "timezone": "browser",
+  "schemaVersion": 37,
+  "version": 1,
+  "refresh": "30s",
+  "panels": [
+    {
+      "type": "stat",
+      "title": "CPU Idle %",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "avg(rate(node_cpu_seconds_total{mode=\"idle\"}[2m])) * 100",
+          "legendFormat": "Idle"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "max": 100
+        }
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Memory Used %",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "targets": [
+        {
+          "expr": "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100",
+          "legendFormat": "Used"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "percent", "max": 100 }
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Filesystem Used %",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "(node_filesystem_size_bytes{fstype!=\"tmpfs\",mountpoint=\"/\"} - node_filesystem_free_bytes{fstype!=\"tmpfs\",mountpoint=\"/\"}) / node_filesystem_size_bytes{fstype!=\"tmpfs\",mountpoint=\"/\"} * 100",
+          "legendFormat": "RootFS"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "percent", "max": 100 }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "CPU Load 1m",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 4 },
+      "targets": [
+        {
+          "expr": "avg(rate(node_cpu_seconds_total{mode!=\"idle\"}[1m])) by (instance)",
+          "legendFormat": "{{instance}}"
+        }
+      ]
+    }
+  ]
+}

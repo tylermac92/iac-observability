@@ -61,3 +61,11 @@
       [Install]
       WantedBy=multi-user.target
   notify: restart node_exporter
+
+- name: Copy alert rules
+  copy:
+    src: alert-rules/
+    dest: "{{ prometheus_dir }}/rules/"
+    owner: root
+    mode: "0644"
+  notify: restart prometheus

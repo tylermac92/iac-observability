@@ -47,3 +47,19 @@
       [Install]
       WantedBy=multi-user.target
   notify: restart alertmanager
+
+- name: Fetch Slack webhook from SSM
+  aws_ssm_parameter_store:
+    name: /monitoring/slack_webhook
+    with_decryption: yes
+  register: slack_hook
+
+- name: Render alertmanager config
+  template:
+    src: alertmanager.yml.j2
+    dest: "{{ alertmanager_dir }}/config/alertmanager.yml"
+    owner: root
+    mode: "0644"
+  vars:
+    slack_webhook: "{{ slack_hook.value }}"
+  notify: restart alertmanager
