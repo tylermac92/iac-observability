@@ -48,6 +48,21 @@
       WantedBy=multi-user.target
   notify: restart alertmanager
 
+- name: Ensure Python3 pip is present
+  become: true
+  yum:
+    name:
+      - python3-pip
+    state: present
+
+- name: Install boto3 & botocore via pip3
+  become: true
+  pip:
+    name:
+      - boto3
+      - botocore
+    executable: pip3
+
 - name: Fetch Slack webhook from SSM
   aws_ssm_parameter_store:
     name: /monitoring/slack_webhook
