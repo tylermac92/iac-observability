@@ -63,12 +63,15 @@
       - botocore
     executable: pip3
 
-- name: Fetch Slack webhook from SSM
-  aws_ssm_parameter_store:
-    name: /monitoring/slack_webhook
-    decryption: true
-    region: us-east-1
-  register: slack_hook
+- name: retrieve slack webhook from ssm
+  set_fact:
+    slack_webhook: >-
+      {{ lookup(
+          'amazon.aws.aws_ssm',
+          '/monitoring/slack_webhook',
+          region='us-east-1',
+          decrypt=true
+      ) }}
 
 - name: Render alertmanager config
   template:
@@ -77,5 +80,5 @@
     owner: root
     mode: "0644"
   vars:
-    slack_webhook: "{{ slack_hook.parameter.value }}"
+    slack_webhook: "{{ slack_webhook }}"
   notify: restart alertmanager
