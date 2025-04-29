@@ -10,10 +10,11 @@
   yum_repository:
     name: grafana
     description: Grafana OSS
-    baseurl: https://rpm.grafana.com/oss/rpm
+    baseurl: https://packages.grafana.com/oss/rpm
     gpgcheck: yes
     repo_gpgcheck: yes
-    gpgkey: https://rpm.grafana.com/gpg.key
+    gpgkey: https://packages.grafana.com/gpg.key
+    enabled: yes
 
 # ------------------------------------------------------------------ #
 # Install package (includes binaries but we will ignore its SysV file)
@@ -22,6 +23,7 @@
   yum:
     name: grafana
     state: present
+    enablerepo: grafana
   tags: grafana
 
 # ------------------------------------------------------------------ #
