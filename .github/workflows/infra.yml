@@ -18,7 +18,7 @@ jobs:
       contents: read
 
     steps:
-      # 1. Checkout code
+      # 1. Checkout
       - uses: actions/checkout@v4
 
       # 2. Install Terraform
@@ -26,7 +26,7 @@ jobs:
         with:
           terraform_version: 1.8.4
 
-      # 3. Configure AWS credentials
+      # 3. Configure AWS creds
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -34,7 +34,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region:            ${{ env.AWS_REGION }}
 
-      # 4. Terraform init (uses backend.tf in the live/dev folder)
+      # 4. Terraform init (reads backend.tf in live/dev)
       - name: Terraform init
         working-directory: infra/terraform/live/dev
         run: terraform init -input=false -no-color
@@ -42,8 +42,7 @@ jobs:
       # 5. Ensure default workspace
       - name: Select default workspace
         working-directory: infra/terraform/live/dev
-        run: |
-          terraform workspace select default || terraform workspace new default
+        run: terraform workspace select default || terraform workspace new default
 
       # 6. Terraform plan
       - name: Terraform plan
@@ -71,18 +70,16 @@ jobs:
       - name: Generate inventory
         working-directory: infra/ansible
         run: |
-          cat > inventory.yml <<EOF
-all:
-  hosts:
-    monitor-node:
-      ansible_host: ${{ steps.tfout.outputs.public_ip }}
-      ansible_user: ec2-user
-      ansible_ssh_private_key_file: ${{ steps.tfout.outputs.key_path }}
-EOF
+          echo "all:" > inventory.yml
+          echo "  hosts:" >> inventory.yml
+          echo "    monitor-node:" >> inventory.yml
+          echo "      ansible_host: ${{ steps.tfout.outputs.public_ip }}" >> inventory.yml
+          echo "      ansible_user: ec2-user" >> inventory.yml
+          echo "      ansible_ssh_private_key_file: ${{ steps.tfout.outputs.key_path }}" >> inventory.yml
           echo "Generated inventory:"
           cat inventory.yml
 
-      # 10. Install Ansible (and jq)
+      # 10. Install Ansible & jq
       - name: Install Ansible and jq
         run: |
           sudo apt-get update -y
