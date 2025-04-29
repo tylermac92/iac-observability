@@ -68,8 +68,9 @@ jobs:
 
       - name: Copy SSH key into ansible folder
         run: |
+          SRC="infra/terraform/live/dev/monitor_key.pem"
           mkdir -p infra/ansible
-          cp "${{ steps.tfout.outputs.key_path }}" infra/ansible/monitor_key.pem
+          cp "$SRC" infra/ansible/monitor_key.pem
           chmod 0600 infra/ansible/monitor_key.pem
 
       # 9. Generate Ansible inventory from outputs
