@@ -72,9 +72,10 @@ jobs:
     # 7 — Generate one-off inventory that points at monitor node
     - name: Generate inventory
       working-directory: infra/ansible
+      shell: bash
       run: |
-        PUBLIC_IP=$(terraform -chdir=../terraform/live/dev output -raw monitor_public_ip)
-        KEY_PATH=$(terraform -chdir=../terraform/live/dev output -raw ssh_private_key_path)
+        PUBLIC_IP=$(terraform -chdir=../terraform/live/dev output -raw monitor_public_ip | head -n1)
+        KEY_PATH=$(terraform -chdir=../terraform/live/dev output -raw ssh_private_key_path | head -n1)
 
         cat > inventory.yml <<EOF
         all:
