@@ -56,9 +56,13 @@ jobs:
       id: tfout
       working-directory: infra/terraform/live/dev
       run: |
-        TF_JSON=$(terraform output -json | tail -n1)
-        echo "public_ip=$(echo $TF_JSON | jq -r .monitor_public_ip.value)" >> "$GITHUB_OUTPUT"
-        echo "key_path=$(echo $TF_JSON | jq -r .ssh_private_key_path.value)" >> "$GITHUB_OUTPUT"
+        CLEAN_JSON=$(terraform output -json | grep -vE '^(::|\[command\])')
+
+        echo "public_ip=$(echo $CLEAN_JSON | jq -r .monitor_public_ip.value)"
+        echo "key_path=$(echo $CLEAN_JSON | jq -r .ssh_private_key_path.value)"
+
+        echo "public_ip=${public_ip}" >> "$GITHUB_OUTPUT"
+        echo "key_path=${key_path}" >> "$GITHUB_OUTPUT"
 
     # 6 — Set up Python & Ansiblee
     - name: Install Ansible
@@ -70,13 +74,15 @@ jobs:
     - name: Generate inventory
       working-directory: infra/ansible
       run: |
-        echo "all:"                          > inventory.yml
-        echo "  hosts:"                     >> inventory.yml
-        echo "    monitor-node:"            >> inventory.yml
-        echo "      ansible_host: ${{ steps.tfout.outputs.public_ip }}" >> inventory.yml
-        echo "      ansible_user: ec2-user" >> inventory.yml
-        echo "      ansible_ssh_private_key_file: ${{ steps.tfout.outputs.key_path }}" >> inventory.yml
-
+        cat > inventory.yml <<EOF
+      all:
+        hosts:
+          monitor-node:
+            ansible_host: ${{ steps.tfout.outputs.public_ip }}
+            ansible_user: ec2-user
+            ansible_ssh_private_key_file: ${{ steps.tfout.outputs.key_path }}
+      EOF
+        
         echo "Generated inventory:"
         cat inventory.yml
 
