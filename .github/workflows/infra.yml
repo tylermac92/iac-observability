@@ -74,7 +74,7 @@ jobs:
       working-directory: infra/terraform/live/dev
       shell: bash --noprofile --norc -e -o pipefail {0}
       run: |
-        TF_JSON=$(terraform output -json | sed -n '/^{/,$p')
+        TF_JSON=$(terraform output -json | grep -v '^::')
 
         PUBLIC_IP=$(echo "$TF_JSON" | jq -r '.monitor_public_ip.value')
         KEY_PATH=$(echo "$TF_JSON" | jq -r '.ssh_private_key_path.value')
