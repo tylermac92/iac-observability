@@ -67,6 +67,7 @@
   aws_ssm_parameter_store:
     name: /monitoring/slack_webhook
     decryption: true
+    region: us-east-1
   register: slack_hook
 
 - name: Render alertmanager config
