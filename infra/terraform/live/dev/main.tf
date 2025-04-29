@@ -44,13 +44,39 @@ data "aws_ami" "amazon_linux" {
   }
 }
 
+data "aws_iam_policy_document" "ec2_assume" {
+  statement {
+    actions = ["sts:AssumeRole"]
+    principals {
+      type        = "Service"
+      identifiers = ["ec2.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role" "monitor_ssm" {
+  name               = "${var.cluster_name}-monitor-ssm-role"
+  assume_role_policy = data.aws_iam_policy_document.ec2_assume.json
+}
+
+resource "aws_iam_role_policy_attachment" "monitor_ssm_ssm" {
+  role       = aws_iam_role.monitor_ssm.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess"
+}
+
+resource "aws_iam_instance_profile" "monitor_ssm" {
+  name = "${var.cluster_name}-monitor-ssm-profile"
+  role = aws_iam_role.monitor_ssm.name
+}
+
 module "monitor_node" {
-  source        = "../../modules/monitor-node"
-  ami_id        = data.aws_ami.amazon_linux.id
-  instance_type = "t3.micro"
-  subnet_id     = module.vpc.public_subnets[0]
-  ssh_key_name  = aws_key_pair.monitor.key_name
-  vpc_id        = module.vpc.vpc_id
+  source               = "../../modules/monitor-node"
+  ami_id               = data.aws_ami.amazon_linux.id
+  instance_type        = "t3.micro"
+  subnet_id            = module.vpc.public_subnets[0]
+  ssh_key_name         = aws_key_pair.monitor.key_name
+  vpc_id               = module.vpc.vpc_id
+  iam_instance_profile = aws_iam_instance_profile.monitor_ssm.name
 }
 
 output "grafana_url" {
