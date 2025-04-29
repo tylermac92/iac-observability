@@ -51,7 +51,7 @@
 - name: Fetch Slack webhook from SSM
   aws_ssm_parameter_store:
     name: /monitoring/slack_webhook
-    with_decryption: yes
+    decryption: true
   register: slack_hook
 
 - name: Render alertmanager config
