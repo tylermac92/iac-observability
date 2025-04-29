@@ -90,7 +90,9 @@ jobs:
       - name: Install Ansible and jq
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y ansible jq
+          sudo apt-get install -y ansible jq python3-pip pipx
+          pipx inject ansible-core boto3 botocore
+          ansible-galaxy collection install amazon.aws
 
       # 11. Run the Ansible playbook
       - name: Run Ansible playbook
