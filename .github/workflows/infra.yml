@@ -72,15 +72,20 @@ jobs:
     # 7 — Generate one-off inventory that points at monitor node
     - name: Generate inventory
       working-directory: infra/ansible
+      env:
+        PUBLIC_IP: ${{ steps.tfout.outputs.public_ip }}
+        KEY_PATH: ${{ steps.tfout.outputs.key_path }}
       run: |
         cat > inventory.yml <<EOF
         all:
           hosts:
             monitor-node:
-              ansible_host: ${{ steps.tfout.outputs.public_ip }}
+              ansible_host: ${PUBLIC_IP}
               ansible_user: ec2-user
-              ansible_ssh_private_key_file: ${{ steps.tfout.outputs.key_path }}
+              ansible_ssh_private_key_file: ${KEY_PATH}
         EOF
+
+        echo "Generated inventory:"
         cat inventory.yml
 
     # 8 — Run the Ansible playbook
