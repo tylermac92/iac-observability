@@ -69,6 +69,8 @@ resource "aws_iam_instance_profile" "monitor_ssm" {
   role = aws_iam_role.monitor_ssm.name
 }
 
+data "aws_caller_identity" "current" {}
+
 data "aws_iam_policy_document" "ssm_put" {
   statement {
     actions = ["ssm:PutParameter"]
