@@ -58,6 +58,8 @@ resource "aws_instance" "monitor" {
 
   associate_public_ip_address = true
 
+  iam_instance_profile = var.iam_instance_profile != "" ? var.iam_instance_profile : null
+
   tags = { Name = "monitor-node" }
 }
 
