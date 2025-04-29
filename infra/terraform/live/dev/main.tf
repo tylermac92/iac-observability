@@ -69,6 +69,19 @@ resource "aws_iam_instance_profile" "monitor_ssm" {
   role = aws_iam_role.monitor_ssm.name
 }
 
+data "aws_iam_policy_document" "ssm_put" {
+  statement {
+    actions = ["ssm:PutParameter"]
+    resources = ["arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/monitoring/slack_webhook"]
+  }
+}
+
+resource "aws_iam_role_policy" "monitor_ssm_put" {
+  name = "${var.cluster_name}-monitor-ssm-put"
+  role = aws_iam_role.monitor_ssm.name
+  policy = data.aws_iam_policy_document.ssm_put.json
+}
+
 module "monitor_node" {
   source               = "../../modules/monitor-node"
   ami_id               = data.aws_ami.amazon_linux.id
