@@ -110,6 +110,26 @@ resource "aws_iam_role_policy_attachment" "monitor_ssm_cw_read" {
   policy_arn = "arn:aws:iam::aws:policy/CloudWatchReadOnlyAccess"
 }
 
+data "aws_iam_policy_document" "loki_s3" {
+  statement {
+    actions = ["s3:PutObject", "s3:GetObject", "s3:ListBucket"]
+    resources = [
+      aws_s3_bucket.loki.arn,
+      "${aws_s3_bucket.loki.arn}/*",
+    ]
+  }
+}
+
+resource "aws_iam_policy" "loki_s3_policy" {
+  name = "${var.cluster_name}-loki-s3"
+  policy = data.aws_iam_policy_document.loki_s3.json
+}
+
+resource "aws_iam_role_policy_attachment" "monitor_loki_s3" {
+  role = aws_iam_role.monitor_ssm.name
+  policy_arn = aws_iam_policy.loki_s3_policy.arn
+}
+
 output "grafana_url" {
   value = "http://${module.monitor_node.public_ip}:3000"
 }
