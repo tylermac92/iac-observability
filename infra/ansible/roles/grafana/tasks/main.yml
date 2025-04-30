@@ -100,7 +100,7 @@
 - name: Provision grafana datasources/dashboards
   copy:
     src: provisioning/
-    dest: /etc/grafana/provisioning/
+    dest: /usr/share/grafana/conf/provisioning/
     owner: grafana
     group: grafana
     mode: "0644"
