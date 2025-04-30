@@ -80,10 +80,7 @@
 
 - name: Download CloudWatch Exporter JAR
   get_url:
-    url: >-
-      https://repo1.maven.org/maven2/io/prometheus/cloudwatch/cloudwatch_exporter/
-      {{ cloudwatch_exporter_version }}/
-      cloudwatch_exporter-{{ cloudwatch_exporter_version }}-jar-with-dependencies.jar
+    url: https://repo1.maven.org/maven2/io/prometheus/cloudwatch/cloudwatch_exporter/{{ cloudwatch_exporter_version }}/cloudwatch_exporter-{{ cloudwatch_exporter_version }}-jar-with-dependencies.jar
     dest: /opt/cloudwatch_exporter/cloudwatch_exporter.jar
     mode: "0755"
   notify: restart prometheus
