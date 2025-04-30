@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     local = {
-      source = "hashicorp/local"
+      source  = "hashicorp/local"
       version = "2.5.2"
     }
   }
@@ -84,14 +84,14 @@ data "aws_region" "current" {}
 
 data "aws_iam_policy_document" "ssm_put" {
   statement {
-    actions = ["ssm:PutParameter"]
+    actions   = ["ssm:PutParameter"]
     resources = ["arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/monitoring/slack_webhook"]
   }
 }
 
 resource "aws_iam_role_policy" "monitor_ssm_put" {
-  name = "${var.cluster_name}-monitor-ssm-put"
-  role = aws_iam_role.monitor_ssm.name
+  name   = "${var.cluster_name}-monitor-ssm-put"
+  role   = aws_iam_role.monitor_ssm.name
   policy = data.aws_iam_policy_document.ssm_put.json
 }
 
@@ -103,6 +103,11 @@ module "monitor_node" {
   ssh_key_name         = aws_key_pair.monitor.key_name
   vpc_id               = module.vpc.vpc_id
   iam_instance_profile = aws_iam_instance_profile.monitor_ssm.name
+}
+
+resource "aws_iam_role_policy_attachment" "monitor_ssm_cw_read" {
+  role       = aws_iam_role.monitor_ssm.name
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchReadOnlyAccess"
 }
 
 output "grafana_url" {

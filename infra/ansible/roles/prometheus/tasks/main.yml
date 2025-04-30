@@ -69,6 +69,55 @@
       WantedBy=multi-user.target
   notify: restart node_exporter
 
+- name: Create CloudWatch Exporter directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - /opt/cloudwatch_exporter
+    - /opt/cloudwatch_exporter/config
+
+- name: Download CloudWatch Exporter JAR
+  get_url:
+    url: https://github.com/prometheus/cloudwatch_exporter/releases/download/v0.27.0/cloudwatch_exporter-0.27.0.jar
+    dest: /opt/cloudwatch_exporter/cloudwatch_exporter.jar
+    mode: "0755"
+  notify: restart prometheus
+
+- name: Template CloudWatch exporter config
+  template:
+    src: cloudwatch_exporter.yml.j2
+    dest: /opt/cloudwatch_exporter/config/config.yml
+    mode: "0644"
+  notify: restart prometheus
+
+- name: Create systemd unit for cloudwatch exporter
+  copy:
+    dest: /etc/systemd/system/cloudwatch_exporter.service
+    owner: root
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=Prometheus CloudWatch Exporter
+      After=network.target
+
+      [Service]
+      Type=simple
+      ExecStart=/usr/bin/java -jar /opt/cloudwatch_exporter/cloudwatch_exporter.jar --config.file=/opt/cloudwatch_exporter/config/config.yml --port=9106
+      Restart=always
+
+      [Install]
+      WantedBy=multi-user.target
+  notify: reload systemd
+
+- name: Enable and start cloudwatch exporter
+  systemd:
+    name: cloudwatch_exporter
+    enabled: yes
+    state: started
+  tags: prometheus
+
 - name: Copy alert rules
   copy:
     src: alert-rules/
