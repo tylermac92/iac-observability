@@ -1,3 +1,12 @@
+terraform {
+  required_providers {
+    local = {
+      source = "hashicorp/local"
+      version = "2.5.2"
+    }
+  }
+}
+
 provider "aws" { region = var.region }
 
 resource "tls_private_key" "monitor" {

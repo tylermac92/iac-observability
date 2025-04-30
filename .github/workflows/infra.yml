@@ -37,7 +37,7 @@ jobs:
       # 4. Terraform init (reads backend.tf in live/dev)
       - name: Terraform init
         working-directory: infra/terraform/live/dev
-        run: terraform init -input=false -no-color
+        run: terraform init -input=false -lockfile=readonly -no-color
 
       # 5. Ensure default workspace
       - name: Select default workspace
