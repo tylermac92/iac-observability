@@ -78,6 +78,13 @@
     - /opt/cloudwatch_exporter
     - /opt/cloudwatch_exporter/config
 
+- name: Install Java runtime for Cloudwatch Exporter
+  become: true
+  yum:
+    name:
+      - java-17-amazon-corretto-headless
+    state: present
+
 - name: Download CloudWatch Exporter JAR
   get_url:
     url: https://repo1.maven.org/maven2/io/prometheus/cloudwatch/cloudwatch_exporter/{{ cloudwatch_exporter_version }}/cloudwatch_exporter-{{ cloudwatch_exporter_version }}-jar-with-dependencies.jar
@@ -104,12 +111,14 @@
 
       [Service]
       Type=simple
-      ExecStart=/usr/bin/java -jar /opt/cloudwatch_exporter/cloudwatch_exporter.jar --config.file=/opt/cloudwatch_exporter/config/config.yml --port=9106
+      ExecStart=/usr/bin/java -jar /opt/cloudwatch_exporter/cloudwatch_exporter.jar 9106 /opt/cloudwatch_exporter/config/config.yml
       Restart=always
 
       [Install]
       WantedBy=multi-user.target
-  notify: reload systemd
+  notify:
+    - reload systemd
+    - restart cloudwatch exporter
 
 - name: Enable and start cloudwatch exporter
   systemd:

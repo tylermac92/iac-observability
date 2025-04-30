@@ -12,3 +12,9 @@
 
 - name: reload systemd
   command: systemctl daemon-reload
+
+- name: restart cloudwatch exporter
+  systemd:
+    name: cloudwatch_exporter
+    state: restarted
+    enabled: yes
