@@ -36,17 +36,18 @@ jobs:
 
       - name: Pin local provider to direct installation
         run: |
-          cat > $HOME/.terraformrc <<EOF
-provider_installation {
-  direct {
-    exclude = ["hashicorp/local"]
-  }
-  filesystem_mirror {
-    path = ".terraform/providers"
-    include = ["registry.terraform.io/hashicorp/local"]
-  }
-}
-EOF
+          mkdir -p ~/.terraform.d
+          cat > ~/.terraform.d/terraform.rc <<EOF
+          provider_installation {
+            direct {
+              exclude = ["hashicorp/local"]
+            }
+            filesystem_mirror {
+              path = ".terraform/providers"
+              include = ["registry.terraform.io/hashicorp/local"]
+            }
+          }
+          EOF
 
       # 4. Terraform init (reads backend.tf in live/dev)
       - name: Terraform init
