@@ -34,6 +34,20 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region:            ${{ env.AWS_REGION }}
 
+      - name: Pin local provider to direct installation
+        run: |
+          cat > $HOME/.terraformrc <<EOF
+provider_installation {
+  direct {
+    exclude = ["hashicorp/local"]
+  }
+  filesystem_mirror {
+    path = ".terraform/providers"
+    include = ["registry.terraform.io/hashicorp/local"]
+  }
+}
+EOF
+
       # 4. Terraform init (reads backend.tf in live/dev)
       - name: Terraform init
         working-directory: infra/terraform/live/dev
