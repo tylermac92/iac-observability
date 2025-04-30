@@ -144,6 +144,7 @@
     - /opt/loki
     - /opt/loki/index
     - /opt/loki/cache
+    - /opt/loki/compactor
     - /etc/loki
 
 - name: Download Loki binary
