@@ -1,0 +1,22 @@
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+
+storage_config:
+  aws:
+    s3: s3://{{ lookup('env','TF_OUTPUT_LOKI_BUCKET') }}/
+  boltdb_shipper:
+    active_index_directory: /opt/loki/index
+    cache_location: /opt/loki/cache
+    shared_store: aws
+
+schema_config:
+  configs:
+    - from: 2020-10-24
+      store: boltdb-shipper
+      object_store: aws
+      schema: v11
+      index:
+        prefix: index_
+        period: 24h

@@ -134,3 +134,59 @@
     owner: root
     mode: "0644"
   notify: restart prometheus
+
+- name: Create loki directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - /opt/loki
+    - /opt/loki/index
+    - /opt/loki/cache
+    - /etc/loki
+
+- name: Download Loki binary
+  get_url:
+    url: https://github.com/grafana/loki/releases/download/v2.9.1/loki-linux-amd64.zip
+    dest: /tmp/loki.zip
+  notify: reload systemd
+
+- name: unpack Loki
+  unarchive:
+    src: /tmp/loki.zip
+    dest: /opt/loki
+    remote_src: yes
+    creates: /opt/loki/loki-linux-amd64
+  notify: reload systemd
+
+- name: Template Loki config
+  template:
+    src: loki.yml.j2
+    dest: /etc/loki/local-config.yaml
+    mode: "0644"
+  notify: reload systemd
+
+- name: Create systemd unit for Loki
+  copy:
+    dest: /etc/systemd/system/loki.service
+    owner: root
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=Loki log aggregation
+      After=network.target
+
+      [Service]
+      ExecStart=/opt/loki/loki-linux-amd64 --config.file=/etc/loki/local-config.yaml
+      Restart=always
+
+      [Install]
+      WantedBy=multi-user.target
+  notify: reload systemd
+
+- name: Enable and start Loki
+  systemd:
+    name: loki
+    enabled: yes
+    state: started
