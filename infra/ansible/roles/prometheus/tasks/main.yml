@@ -21,6 +21,13 @@
     remote_src: yes
     extra_opts: [--strip-components=1]
 
+- name: Template prometheus configuration
+  template:
+    src: prometheus.yml.j2
+    dest: /opt/prometheus/bin/prometheus.yml
+    mode: "0644"
+  notify: restart prometheus
+
 - name: Copy prometheus systemd unit
   copy:
     dest: /etc/systemd/system/prometheus.service
