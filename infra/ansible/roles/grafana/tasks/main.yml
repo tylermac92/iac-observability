@@ -97,7 +97,7 @@
     state: started
   tags: grafana
 
-- name: Provision grafana datasources/dashboards
+- name: Provision grafana datasource/dashboards
   copy:
     src: provisioning/
     dest: /usr/share/grafana/conf/provisioning/
