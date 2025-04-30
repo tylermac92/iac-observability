@@ -5,7 +5,7 @@ server:
 
 storage_config:
   aws:
-    s3: s3://{{ lookup('env','TF_OUTPUT_LOKI_BUCKET') }}/
+    s3: s3://obs-demo-loki-logs/
   boltdb_shipper:
     active_index_directory: /opt/loki/index
     cache_location: /opt/loki/cache
