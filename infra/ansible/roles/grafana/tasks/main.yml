@@ -103,4 +103,5 @@
     dest: /etc/grafana/provisioning/
     owner: grafana
     group: grafana
+    mode: "0644"
   notify: restart grafana
